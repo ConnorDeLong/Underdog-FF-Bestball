@@ -188,11 +188,3 @@ if __name__ == '__main__':
     df_adp = adp_scraper.scrape_adp()
     
     print(df_adp)
-    
-    
-    
-
-    
-    
-    
-    
