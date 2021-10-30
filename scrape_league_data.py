@@ -1,7 +1,6 @@
 
 import requests
 import pandas as pd
-import underdog_login_credentials
 from pull_bearer_token import pull_bearer_token
 
 
@@ -182,6 +181,11 @@ class IndLeagueData():
 
 
 if __name__ == '__main__':
+    
+    try:
+        import underdog_login_credentials
+    except:
+        pass
     
     pd.set_option('display.max_rows', 50)
     pd.set_option('display.max_columns', 50)
