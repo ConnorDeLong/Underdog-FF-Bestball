@@ -1,6 +1,7 @@
 
 import requests
 import pandas as pd
+import underdog_login_credentials
 from pull_bearer_token import pull_bearer_token
 
 
@@ -187,8 +188,8 @@ if __name__ == '__main__':
     
     url = "https://underdogfantasy.com/lobby"    
     chromedriver_path = r"C:\Users\conde\chromedriver\chromedriver.exe"
-    username = "condelong11@yahoo.com"
-    password = "PenciL1!"
+    username = underdog_login_credentials.USERNAME
+    password = underdog_login_credentials.PASSWORD
     
     bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
     league_id = 'f75ed573-6a11-4e59-b712-1e8826d05c44'
@@ -204,121 +205,8 @@ if __name__ == '__main__':
     url_draft_json = read_in_site_data(url_draft, headers=auth_header)
     weekly_scores_json = read_in_site_data(url_weekly_scores, headers=auth_header)
     
-    print(url_draft_json)
-
-    print(url_draft_json)
     
     # reference_data = ReferenceData()
     # df = reference_data.player_scores_df
     
-    
-    # print(df['player_scores_wk_1'].columns)
-    
-    # player_scores_df_cols = list(df['player_scores_wk_1'].columns)
-    # print(player_scores_df_cols)
-    
-    # check = pd.DataFrame(data=None, columns=player_scores_df_cols)
-    
-    # print(check)
-    
-    # df_dict_col = create_scraped_data_df(df['projection'].to_list())
-    # df_dict_col2 = create_scraped_data_df(df['score'].to_list())
-    
-    # print(df_dict_col)
-    # print(df_dict_col2)
-    
-    # print(df_dict_col.groupby(['id']).count())
-    
-    
-    
-    
-    
-    
-    
-    # drafts_headers = {'authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2ZjIwOWFhNi1jY2ZlLTQwMTEtOTliZi0xODU2M2I4MzhkNDQiLCJzdWIiOiIwMzcxNzEzMS1lMDUzLTQ1MWQtOWJlNi0wOTc1NWY1ODc1YWUiLCJzY3AiOiJ1c2VyIiwiYXVkIjpudWxsLCJpYXQiOjE2MzUzMDQ4MjYsImV4cCI6MTYzNzkzNDU3Mn0.hVRQ1jA9bz4NEoo107MntilOC-2XvqHaHRZomZeSOk0'}
-    # drafts_base_url = 'https://api.underdogfantasy.com/v2/drafts/'
-    # league_id = 'f75ed573-6a11-4e59-b712-1e8826d05c44'
-    
-    # ref_base_url = 'https://stats.underdogfantasy.com/v1/slates/'
-    # players_url_id = '87a5caba-d5d7-46d9-a798-018d7c116213/players'
-    # appearances_url_id = '87a5caba-d5d7-46d9-a798-018d7c116213/scoring_types/ccf300b0-9197-5951-bd96-cba84ad71e86/appearances'
-    
-    # draft_data = read_in_site_data(drafts_base_url + league_id, headers=drafts_headers)
-    
-    # print(draft_data)
-
-    # players_data = read_in_site_data(ref_base_url, players_url_id)
-    # appearances_data = read_in_site_data(ref_base_url, appearances_url_id)
-    
-    # drafts_base_url = 'https://api.underdogfantasy.com/v2/drafts/'
-    # league_id = '87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts'
-    
-    # live_drafts = read_in_site_data(drafts_base_url, league_id)
-    
-
-    # print(len(live_drafts['draft']))
-    
-
-    
-    # print(draft_data.keys())
-    # print(type(draft_data['draft']))
-    # print(draft_data['draft'].keys())
-    # print(len(draft_data['draft']))
-    # [print(draft_data.keys())]
-    
-    # print(draft_data['draft']['picks'][0].keys())
-    # print(draft_data['draft']['picks'][5]['number'])
-    # print(draft_data['draft']['picks'][0]['id'])
-    
-    # print(draft_data['draft']['clock'])
-    # print(draft_data['draft']['contest_style_id'])
-    # print(draft_data['draft']['entry_role'])
-    # print(draft_data['draft']['slate_id'])
-    # print(draft_data['draft']['source'])
-    # print(draft_data['draft']['source_entry_style_id'])
-    # print(draft_data['draft']['status'])
-    # print(draft_data['draft']['title'])
-    # print(draft_data['draft']['users'])
-    
-    
-    ######################################################################
-    ######################### DRAFT DATA #################################
-    ######################################################################
-    
-    ### Pull pick data for one draft ###
-    # picks = create_scraped_data_dict(draft_data['draft']['picks'])
-    # picks_df = convert_data_dict_to_df(picks)
-    
-    
-    ### Pull user data for one draft ###   
-    # users = create_scraped_data_dict(draft_data['draft']['users'])
-    # users_df = convert_data_dict_to_df(users)
-    # print(users_df)
-        
-    
-    ######################################################################
-    ####################### PLAYERS DATA #################################
-    ######################################################################
-    
-    ### Pull players data ###
-    # players = create_scraped_data_dict(players_data['players'])
-    # players_df = convert_data_dict_to_df(players)
-    
-    
-    ### Pull appearance data (this links the players data to the pick data) ###
-    # appearances = create_scraped_data_dict(appearances_data['appearances'])
-    # appearances_df = convert_data_dict_to_df(appearances)
-
-
-    
-    # print('\n', '\n', appearances_df.iloc[0])
-    # print('\n', '\n', players_df[players_df['last_name'] == 'McCaffrey'])
-    # print(picks_df[picks_df['number'] == 1])
-    
-    ######################################################################
-    ############################## SCRATCH ###############################
-    ######################################################################
-    # USE THIS SITE TO CONVERT THE CURL OF AN XHR INTO PYTHON REQUEST CODE
-    # Right-click the XHR, copy, copy curl
-    # https://curl.trillworks.com/#
     

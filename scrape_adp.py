@@ -179,10 +179,12 @@ class ScrapeAdp():
 
 if __name__ == '__main__':
     
+    import underdog_login_credentials
+    
     url = "https://underdogfantasy.com/rankings/NFL/87a5caba-d5d7-46d9-a798-018d7c116213"    
     chromedriver_path = r"C:\Users\conde\chromedriver\chromedriver.exe"
-    username = "ENTER USERNAME"
-    password = "ENTER PASSWORD"
+    username = underdog_login_credentials.USERNAME
+    password = underdog_login_credentials.PASSWORD
 
     adp_scraper = ScrapeAdp(url, chromedriver_path, username, password)
     df_adp = adp_scraper.scrape_adp()

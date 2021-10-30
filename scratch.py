@@ -1,19 +1,3 @@
-import requests
-from pull_bearer_token import pull_bearer_token
-
-url = "https://underdogfantasy.com/lobby"    
-chromedriver_path = r"C:\Users\conde\chromedriver\chromedriver.exe"
-username = "condelong11@yahoo.com"
-password = "PenciL1!"
-
-bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
-headers = {'authorization': bearer_token}
-
-headers = {'authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIwOGQxMmUxNC0xMmY0LTRiZWYtYWE1Mi0zZmUzZmY2YjdlNDUiLCJzdWIiOiIwMzcxNzEzMS1lMDUzLTQ1MWQtOWJlNi0wOTc1NWY1ODc1YWUiLCJzY3AiOiJ1c2VyIiwiYXVkIjpudWxsLCJpYXQiOjE2MzU2MjE2ODUsImV4cCI6MTYzODI1MTQzMX0.xHCZIgQR9XuyPpiU3Bf5mtZGtzMIarmehvnt3A7Qro0'}
-
-# response = requests.get('https://api.underdogfantasy.com/v2/drafts/f75ed573-6a11-4e59-b712-1e8826d05c44', headers=headers)
-response = requests.get('https://api.underdogfantasy.com/v1/drafts/f75ed573-6a11-4e59-b712-1e8826d05c44/weekly_scores', headers=headers)
-
 
 print(response)
 
@@ -108,7 +92,6 @@ headers = {
     'accept-language': 'en-US,en;q=0.9',
 }
 
-data = '{"user":{"email":"condelong11@yahoo.com","password":"PenciL1!"}}'
 
 response = requests.post('https://api.underdogfantasy.com/v1/users/sign_in', headers=headers, data=data)
 
