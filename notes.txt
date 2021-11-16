@@ -17,7 +17,7 @@ Sources:
 League Specific Data:
     - Draft: https://api.underdogfantasy.com/v2/drafts/f75ed573-6a11-4e59-b712-1e8826d05c44
         - Contains the pick level data for the leage
-        - Key to dict is ['drafts']['picks']
+        - Key to dict is ['draft']['picks']
         - REQUIRES A HEADER WITH AN AUTH
     - Weekly Scores: https://api.underdogfantasy.com/v1/drafts/f75ed573-6a11-4e59-b712-1e8826d05c44/weekly_scores
         - Scores for each team by week
@@ -68,3 +68,6 @@ is pretty plain and requires a header in order to pull from it
     found after the first period
 - Doesn't look like there is a way to differentiate starters from bench players in a week, but this
 can be derived
+- The '87a5caba-d5d7-46d9-a798-018d7c116213' portion of the URLs might need replaced
+with a 'slate_id' variable which can be found in https://api.underdogfantasy.com/v2/user/sports/nfl/live_slates?best_ball=true
+    - Note that this appears to represent ALL 2021 best ball drafts

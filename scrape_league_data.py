@@ -11,7 +11,6 @@ def read_in_site_data(url, headers: dict=None) -> dict:
         headers = {}
     
     response = requests.get(url, headers=headers)
-    print(response)
     
     site_data = response.json()
     
@@ -165,22 +164,132 @@ class ReferenceData():
         final_df.drop(['projection', 'score'], axis=1, inplace=True)
         
         return final_df
-    
-    
+
+
 class IndLeagueData():
     ''' Compiles all major league specific data for an individual league in dataframes'''
     
     def __init__(self, league_id: str, bearer_token: str):
+        auth_header = {'authorization': bearer_token}
+        
         url_draft = 'https://api.underdogfantasy.com/v2/drafts/' + league_id
         url_weekly_scores = 'https://api.underdogfantasy.com/v1/drafts/' + league_id + '/weekly_scores'
 
-        auth_header = {'authorization': bearer_token}
-        
-        url_draft_json = read_in_site_data(url_draft, headers=auth_header)
+        draft_json = read_in_site_data(url_draft, headers=auth_header)
         weekly_scores_json = read_in_site_data(url_weekly_scores, headers=auth_header)
+        
+        self.league_id = league_id
+        
+        self.draft_df = self._create_draft_df(draft_json['draft']['picks'])
+        self.weekly_scores_df = self._create_weekly_scores_df(weekly_scores_json['draft_weekly_scores'])
+        
+    def _create_draft_df(self, scraped_data: list) -> pd.DataFrame:
+        
+        initial_scraped_df = create_scraped_data_df(scraped_data)
+        initial_scraped_df.drop(['projection_average'], axis=1, inplace=True)
+        
+        initial_scraped_df['draft_id'] = self.league_id
+        
+        return initial_scraped_df
+    
+    def _create_weekly_scores_df(self, scraped_data: list) -> pd.DataFrame:
+        
+        initial_scraped_df = create_scraped_data_df(scraped_data)
+
+        weekly_scores = self._pull_out_weekly_scores(initial_scraped_df)
+        
+        initial_scraped_df.drop(['week', 'draft_entries_points'], axis=1, inplace=True)
+        
+        final_scraped_df = pd.merge(left=weekly_scores, right=initial_scraped_df,
+                                    on='id', how='left')
+        final_scraped_df.drop(['id'], axis=1, inplace=True)
+        
+        return final_scraped_df
+    
+    def _pull_out_weekly_scores(self, df: pd.DataFrame) -> pd.DataFrame:
+        ''' 
+        Each row represents one week where each teams score is contained
+        within a dicitonary for that week. This pulls those scores out and 
+        puts them in a Team/Week level df
+        '''
+        
+        df = df.copy()
+        
+        all_weekly_scores = []
+        for index, row in df.iterrows():
+            row_id = row['id']
+            week_id = row['week']['id']
+            status = row['week']['status']  
+            points_dict = row['draft_entries_points']
+            
+            for user_id, points in points_dict.items():
+                weekly_scores = [row_id, week_id, status, user_id, points]
+                
+                all_weekly_scores.append(weekly_scores)
+                
+        columns = ['id', 'week_id', 'status', 'user_id', 'total_points']
+        df = pd.DataFrame(data=all_weekly_scores, columns=columns)
+        
+        return df
+
+
+class UserData():
+    
+    def __init__(self, bearer_token):
+        self.auth_header = {'authorization': bearer_token}
+        
+        url_leagues_base = 'https://api.underdogfantasy.com/v2/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts'
+        url_tourney_base = 'https://api.underdogfantasy.com/v1/user/tournament_rounds/83eb0d3c-9699-443b-be6c-f4123bed59e6/drafts'
+
+        leagues_json_dict = self._create_leagues_json_dict(url_leagues_base)
+        tourneys_json_dict = self._create_leagues_json_dict(url_tourney_base)
+        
+        leagues_df = self._create_leagues_df(leagues_json_dict)
+        tourneys_df = self._create_leagues_df(tourneys_json_dict)
+        
+        self.all_leagues_df = pd.concat([leagues_df, tourneys_df])
+        self.all_leagues_df.reset_index(inplace=True)
+        
+    def _create_leagues_df(self, scraped_data: dict) -> pd.DataFrame:
+        
+        leagues_df_list = []
+        for leagues_page in scraped_data.values():
+            leagues_page_df = create_scraped_data_df(leagues_page['drafts'])
+            leagues_df_list.append(leagues_page_df)
+            
+        leagues_df = pd.concat(leagues_df_list)
+        
+        return leagues_df
+    
+    def _create_leagues_json_dict(self, url_base: str) -> dict:
+        ''' Loops through all the different pages that contain the league level data '''
+        
+        url_exists = True
+        i = 1
+        leagues_json_dict = {}
+        while url_exists:
+            if i == 1:
+                url = url_base
+            else:
+                url = url_base + '?page=' + str(i)
+                
+            leagues = read_in_site_data(url, headers=self.auth_header)
+                
+            if len(leagues['drafts']) > 0:
+                leagues_json_dict['page_' + str(i)] = leagues
+            else:
+                url_exists = False
+                
+            i += 1
+            
+        return leagues_json_dict
 
 
 if __name__ == '__main__':
+        
+    ##############################################################
+    ####################### Get all DFs ##########################
+    ##############################################################
     
     try:
         import underdog_login_credentials
@@ -190,27 +299,17 @@ if __name__ == '__main__':
     pd.set_option('display.max_rows', 50)
     pd.set_option('display.max_columns', 50)
     
-    url = "https://underdogfantasy.com/lobby"    
+    ### Variables to change ###
     chromedriver_path = r"C:\Users\conde\chromedriver\chromedriver.exe"
     username = underdog_login_credentials.USERNAME
     password = underdog_login_credentials.PASSWORD
+    league_id = '26db8d07-a2e0-470a-8f41-bc2c1958b034'
     
+    ### Keep as is ###
+    url = "https://underdogfantasy.com/lobby"    
     bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
-    league_id = 'f75ed573-6a11-4e59-b712-1e8826d05c44'
-
+    
+    ### Create instances of the different data objects ###
+    ref_data = ReferenceData()
     league_data = IndLeagueData(league_id, bearer_token)
-    
-    
-    url_draft = 'https://api.underdogfantasy.com/v2/drafts/' + league_id
-    url_weekly_scores = 'https://api.underdogfantasy.com/v1/drafts/' + league_id + '/weekly_scores'
-
-    auth_header = {'authorization': bearer_token}
-    
-    url_draft_json = read_in_site_data(url_draft, headers=auth_header)
-    weekly_scores_json = read_in_site_data(url_weekly_scores, headers=auth_header)
-    
-    
-    # reference_data = ReferenceData()
-    # df = reference_data.player_scores_df
-    
-    
+    user_data = UserData(bearer_token)   

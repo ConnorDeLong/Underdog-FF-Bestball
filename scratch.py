@@ -2,12 +2,40 @@
 print(response)
 
 print(bearer_token)
-# response = requests.get('https://stats.underdogfantasy.com/v1/weeks/78/scoring_types/ccf300b0-9197-5951-bd96-cba84ad71e86/appearances' \
-#                         # , headers=headers
-#                         )
-# response = requests.get(urls_player_scores['url_player_scores_wk_17'])
+headers = {'authorization': bearer_token}
+response = requests.get('https://api.underdogfantasy.com/v2/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts?page=2' \
+                        , headers=headers
+                        )
+print(response)    
+
     
-# data = response.json()
+data = response.json()
+print(len(data['drafts']))
+
+from scrape_league_data import read_in_site_data
+
+auth_header = {'authorization': bearer_token}
+url_leagues_base = 'https://api.underdogfantasy.com/v2/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts'
+
+url_exists = True
+i = 1
+leagues_json_dict = {}
+while url_exists:
+    if i == 1:
+        url = url_leagues_base
+    else:
+        url = url_leagues_base + '?page=' + str(i)
+        
+    leagues = read_in_site_data(url, headers=auth_header)
+        
+    if len(leagues['drafts']) > 0:
+        leagues_json_dict['leagues_' + str(i)] = leagues
+    else:
+        url_exists = False
+        
+    i += 1
+
+print(leagues_json_dict)
 
 # print(response.status_code)
 
