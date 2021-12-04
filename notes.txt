@@ -37,6 +37,7 @@ Reference Data:
         - Contains ALL player scores for a week
         - Week is specified by "78" which represents week 1 and increases incrementally for each week
         - Key to dict is 'appearances'
+        - Use this for the team and the Appearances data for the position (latter will represent the position at time of draft)
     - Teams: https://stats.underdogfantasy.com/v1/teams
         - Descriptive data for all teams across all sports
         - Key to dict is "teams"

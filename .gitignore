@@ -1,4 +1,5 @@
-underdog_login_credentials.txt
+underdog_login_credentials.py
 .ipynb_checkpoints
 __pycache__/
 scratch/
+sample_data/
