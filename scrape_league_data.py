@@ -352,9 +352,13 @@ class UserData(BaseData):
         
         self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts'
         self.url_tourney_leagues = 'https://api.underdogfantasy.com/v1/user/tournament_rounds/83eb0d3c-9699-443b-be6c-f4123bed59e6/drafts'
-
+        self.url_tourney_leagues_main = 'https://api.underdogfantasy.com/v1/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/tournament_rounds'
+        
         self.json_leagues = {}
+        self.json_tourney_leagues_main = {}
+        
         self.df_all_leagues = pd.DataFrame()
+        self.df_tourney_leagues_main = pd.DataFrame()
         
     def create_df_all_leagues(self):
         df_base_leagues = self._create_df_leagues(self.url_base_leagues, 'base')
@@ -364,6 +368,17 @@ class UserData(BaseData):
         df_all_leagues.reset_index(inplace=True)
         
         return df_all_leagues
+    
+    def create_df_tourney_leagues_main(self):
+        self.json_tourney_leagues_main = self.read_in_site_data(self.url_tourney_leagues_main, headers=self.auth_header)
+        scraped_data = self.json_tourney_leagues_main['tournament_rounds']
+        
+        initial_scraped_df = self.create_scraped_data_df(scraped_data)
+        
+        # score_col = initial_scraped_df['tournament'].to_list()
+        # score_df = self.create_scraped_data_df(score_col)
+        
+        return initial_scraped_df
         
     def _create_df_leagues(self, url_base: str, league_type: str) -> pd.DataFrame:
         
@@ -466,5 +481,8 @@ if __name__ == '__main__':
     bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
     
     ### Pull all major UD data elements ###
-    underdog_data = create_underdog_df_dict(bearer_token)
+    # underdog_data = create_underdog_df_dict(bearer_token)
     
+    user_data = UserData(bearer_token)
+    tourney_ids = list(user_data.create_df_tourney_leagues_main()['id'])
+    print(len(tourney_ids))
