@@ -1,6 +1,7 @@
 
 import requests
 import pandas as pd
+import time
 from pull_bearer_token import pull_bearer_token
 
 
@@ -9,14 +10,19 @@ class BaseData():
     def __init__(self, clear_json_attrs: bool=True):
         self._clear_json_attrs = clear_json_attrs
     
-    def build_all_dfs(self):
+    def build_all_dfs(self, sleep_time: int=0):
         attrs = [attr for attr in dir(self) if attr.startswith('df_')]
         for attr in attrs:
             method_name = 'create_'+ attr
             self.__dict__[attr] = getattr(self, method_name)()
+            
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            else:
+                pass
         
         if self._clear_json_attrs == True:
-            self.clear_json_attrs()    
+            self.clear_json_attrs() 
         
     def clear_json_attrs(self):
         attrs = [attr for attr in dir(self) if attr.startswith('json_')]
@@ -87,7 +93,6 @@ class ReferenceData(BaseData):
     ''' Compiles all major reference data into dataframes '''
     
     def __init__(self, clear_json_attrs: bool=True):
-        
         super().__init__(clear_json_attrs=clear_json_attrs)
         
         self._player_scores_wk_1_id = 78
@@ -123,7 +128,6 @@ class ReferenceData(BaseData):
             self.clear_json_attrs()  
         
     def create_df_players(self) -> pd.DataFrame:
-        
         self.json_players = self.read_in_site_data(self.url_players)
         
         initial_scraped_df = self.create_scraped_data_df(self.json_players['players'])
@@ -133,7 +137,6 @@ class ReferenceData(BaseData):
         return initial_scraped_df
         
     def create_df_appearances(self) -> pd.DataFrame:
-        
         self.json_appearances =self. read_in_site_data(self.url_appearances)
         
         initial_scraped_df = self.create_scraped_data_df(self.json_appearances['appearances'])
@@ -157,7 +160,6 @@ class ReferenceData(BaseData):
         return final_df
     
     def create_df_teams(self) -> pd.DataFrame:
-        
         self.json_teams = self.read_in_site_data(self.url_teams)
         
         initial_scraped_df = self.create_scraped_data_df(self.json_teams['teams'])
@@ -184,7 +186,6 @@ class ReferenceData(BaseData):
         return final_df
     
     def create_df_player_scores(self):
-        
         self.json_player_scores = {'player_scores_wk_' + str(i + 1): 
                                     self.read_in_site_data(self.urls_player_scores['player_scores_wk_' + str(i + 1)])
                                     for i, wk_id in enumerate(range(self._player_scores_wk_1_id, self._player_scores_wk_1_id + 17))}
@@ -205,7 +206,6 @@ class ReferenceData(BaseData):
         return player_scores_df
         
     def _create_df_player_scores_one_wk(self, scraped_data: list) -> pd.DataFrame:
-        
         initial_scraped_df = self.create_scraped_data_df(scraped_data)
         initial_scraped_df.drop(['latest_news_item_updated_at'], axis=1, inplace=True)
         
@@ -246,7 +246,6 @@ class LeagueData(BaseData):
     ''' Compiles all major league specific data for an individual league in dataframes'''
     
     def __init__(self, league_ids: str, bearer_token: str, clear_json_attrs: bool=True):
-        
         super().__init__(clear_json_attrs=clear_json_attrs)
         
         self.league_ids = league_ids
@@ -288,7 +287,6 @@ class LeagueData(BaseData):
         return final_df
         
     def _create_df_draft_ind_league(self, league_id) -> pd.DataFrame:
-        
         self.json_drafts[league_id] = self.read_in_site_data(self.url_drafts[league_id], headers=self.auth_header)
         scraped_data = self.json_drafts[league_id]['draft']['picks']
         
@@ -300,7 +298,6 @@ class LeagueData(BaseData):
         return initial_scraped_df
     
     def _create_df_weekly_scores_ind_league(self, league_id) -> pd.DataFrame:
-        
         self.json_weekly_scores[league_id] = self.read_in_site_data(self.url_weekly_scores[league_id], 
                                                                     headers=self.auth_header)
         scraped_data = self.json_weekly_scores[league_id]['draft_weekly_scores']
@@ -351,39 +348,30 @@ class UserData(BaseData):
         self.auth_header = {'authorization': bearer_token}
         
         self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts'
-        self.url_tourney_leagues = 'https://api.underdogfantasy.com/v1/user/tournament_rounds/83eb0d3c-9699-443b-be6c-f4123bed59e6/drafts'
-        self.url_tourney_leagues_main = 'https://api.underdogfantasy.com/v1/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/tournament_rounds'
+        self.url_tourney_league_ids = 'https://api.underdogfantasy.com/v1/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/tournament_rounds'
         
         self.json_leagues = {}
-        self.json_tourney_leagues_main = {}
         
         self.df_all_leagues = pd.DataFrame()
-        self.df_tourney_leagues_main = pd.DataFrame()
         
-    def create_df_all_leagues(self):
-        df_base_leagues = self._create_df_leagues(self.url_base_leagues, 'base')
-        df_tourney_leagues = self._create_df_leagues(self.url_tourney_leagues, 'tourney')
+    def create_df_all_leagues(self, league_urls: list=None):
+        if league_urls is None:
+            league_urls = self._create_league_urls()
         
-        df_all_leagues = pd.concat([df_base_leagues, df_tourney_leagues])
+        leagues = []
+        for i, league_url in enumerate(league_urls):
+            df = self._create_df_leagues(league_url, 'league_' + str(i + 1))
+            leagues.append(df)
+        
+        df_all_leagues = pd.concat(leagues)
         df_all_leagues.reset_index(inplace=True)
+        df_all_leagues.drop(columns=['index'], inplace=True)
         
         return df_all_leagues
-    
-    def create_df_tourney_leagues_main(self):
-        self.json_tourney_leagues_main = self.read_in_site_data(self.url_tourney_leagues_main, headers=self.auth_header)
-        scraped_data = self.json_tourney_leagues_main['tournament_rounds']
         
-        initial_scraped_df = self.create_scraped_data_df(scraped_data)
-        
-        # score_col = initial_scraped_df['tournament'].to_list()
-        # score_df = self.create_scraped_data_df(score_col)
-        
-        return initial_scraped_df
-        
-    def _create_df_leagues(self, url_base: str, league_type: str) -> pd.DataFrame:
-        
-        self.json_leagues[league_type] = self._create_json_leagues(url_base)
-        scraped_data = self.json_leagues[league_type]
+    def _create_df_leagues(self, url_base: str, json_leagues_key: str) -> pd.DataFrame:
+        self.json_leagues[json_leagues_key] = self._create_json_leagues(url_base)
+        scraped_data = self.json_leagues[json_leagues_key]
         
         leagues_df_list = []
         for leagues_page in scraped_data.values():
@@ -416,8 +404,39 @@ class UserData(BaseData):
             i += 1
             
         return leagues_json_dict
-
     
+    def _create_df_tourney_league_ids(self) -> pd.DataFrame:
+        json_tourney_league_ids = self.read_in_site_data(self.url_tourney_league_ids, headers=self.auth_header)
+        scraped_data = json_tourney_league_ids['tournament_rounds']
+        
+        initial_scraped_df = self.create_scraped_data_df(scraped_data)
+        
+        # Pulling out the 'id' from the 'tournament' dict in case this is whats needed
+        tournament_col = initial_scraped_df['tournament'].to_list()
+        tournament_df = self.create_scraped_data_df(tournament_col)
+        tournament_df.rename(columns={'id': 'tournament_id'}, inplace=True)        
+        tournament_df = tournament_df['tournament_id']
+
+        initial_scraped_df.drop(['tournament'], axis=1, inplace=True)
+        final_df = initial_scraped_df.join(tournament_df)
+        
+        return final_df
+    
+    def _create_league_urls(self, tourney_league_ids: list=None) -> list:
+        if tourney_league_ids is None:
+            tourney_league_ids = list(self._create_df_tourney_league_ids()['id'])
+            
+        base_url = 'https://api.underdogfantasy.com/v1/user/tournament_rounds/'
+        tourney_league_urls = []
+        for tourney_league_id in tourney_league_ids:
+            tourney_league_url = base_url + tourney_league_id + '/drafts'
+            tourney_league_urls.append(tourney_league_url)
+            
+        tourney_league_urls.append(self.url_base_leagues)
+            
+        return tourney_league_urls
+
+
 class AllUnderdogData():
     
     def __init__(self, bearer_token: str, league_ids:list=None, clear_json_attrs: bool=True):
@@ -431,8 +450,9 @@ class AllUnderdogData():
         self.league_data.build_all_dfs()
         
 
-def create_underdog_df_dict(bearer_token: str) -> dict:
+def create_underdog_df_dict(bearer_token: str, sleep_time: int=0) -> dict:
     ''' Creates a dictionary of dfs containing the most relevant UD data '''
+    
     ref_data = ReferenceData()
     ref_data.build_all_dfs()
     
@@ -441,7 +461,7 @@ def create_underdog_df_dict(bearer_token: str) -> dict:
     league_ids = list(user_data.df_all_leagues['id'])
     
     league_data = LeagueData(league_ids, bearer_token)
-    league_data.build_all_dfs()
+    league_data.build_all_dfs(sleep_time=sleep_time)
     
     df_players_master = ref_data.df_players_master
     df_player_scores = ref_data.df_player_scores
@@ -481,8 +501,4 @@ if __name__ == '__main__':
     bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
     
     ### Pull all major UD data elements ###
-    # underdog_data = create_underdog_df_dict(bearer_token)
-    
-    user_data = UserData(bearer_token)
-    tourney_ids = list(user_data.create_df_tourney_leagues_main()['id'])
-    print(len(tourney_ids))
+    underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5)
