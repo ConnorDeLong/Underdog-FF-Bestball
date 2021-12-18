@@ -7,10 +7,23 @@ from pull_bearer_token import pull_bearer_token
 
 class BaseData():
     
-    def __init__(self, clear_json_attrs: bool=True):
+    def __init__(self, clear_json_attrs: bool=True, slate_id: str=None):
         self._clear_json_attrs = clear_json_attrs
+        
+        if slate_id is None:
+            self.slate_id = '87a5caba-d5d7-46d9-a798-018d7c116213'
+        else:
+            self.slate_id = slate_id
+            
+        self._player_scores_wk_1_id = 78
+        self._player_scores_wk_last_id = 78 + 17
     
     def build_all_dfs(self, sleep_time: int=0):
+        ''' 
+        Overwrites every 'df_' attribute with a df that is created by running the
+        'create_' method that matches it. This serves as the primary method 
+        for building the dfs associated with the class
+        '''
         attrs = [attr for attr in dir(self) if attr.startswith('df_')]
         for attr in attrs:
             method_name = 'create_'+ attr
@@ -25,13 +38,16 @@ class BaseData():
             self.clear_json_attrs() 
         
     def clear_json_attrs(self):
+        ''' 
+        Clears all the atttributes that hold the json data pulled from the API. 
+        By default, this is executed when the build_all_dfs method is run
+        '''
         attrs = [attr for attr in dir(self) if attr.startswith('json_')]
         for attr in attrs:
             self.__dict__[attr] = {}
     
     def read_in_site_data(self, url, headers: dict=None) -> dict:
-        ''' Read in the data from the site '''
-        
+        ''' Pulls in the raw data from the API and returns it as a dict '''
         if headers is None:
             headers = {}
         
@@ -43,11 +59,10 @@ class BaseData():
     
     def create_scraped_data_df(self, scraped_data: list) -> pd.DataFrame:
         ''' 
-        Returns a df of all the data elements for each object in a list of dictionaries.
-        Final dictionary will have a 'columns' key containing the column names and every other 
-        key will be a number >=0
+        Converts a list of dictionaries into a df where the keys of the dicts are 
+        used for the columns and the values are placed in the rows.
+        NOTE: this assumes the keys in all dicts are the same.
         '''
-    
         # Get the dicionary keys to identify the columns of the list for each output dict key
         output_data_cols = []
         for output_data_col in scraped_data[0].keys():
@@ -72,7 +87,11 @@ class BaseData():
         return final_data_df
     
     def _convert_data_dict_to_df(self, scraped_data_dict: dict) -> pd.DataFrame:
-        ''' Converts the dict from the create_scraped_data_dict function to a df '''
+        ''' 
+        Converts the dict from the create_scraped_data_dict function to a df 
+        NOTE: The input dict takes the following form: 
+        {'columns': [<column names>], 1: [<column values>], 2: [<column_values>], ...}
+        '''
         
         columns = scraped_data_dict['columns']
         
@@ -86,7 +105,20 @@ class BaseData():
             
         final_df = pd.DataFrame(data=data_for_df, columns=columns)
             
-        return final_df  
+        return final_df
+    
+    def _create_week_id_mapping(self) -> pd.DataFrame:
+        ''' Creates a map between the APIs Week ID and the actual Week number '''
+        wk_numbers = []
+        wk_ids = []
+        for wk_number, wk_id in enumerate(range(self._player_scores_wk_1_id, self._player_scores_wk_last_id + 1)):
+            wk_numbers.append(wk_number + 1)
+            wk_ids.append(wk_id)
+            
+        mapping = {'week_number': wk_numbers, 'week_id': wk_ids}
+        df_mapping = pd.DataFrame(data=mapping)
+        
+        return df_mapping
 
 
 class ReferenceData(BaseData):
@@ -97,8 +129,8 @@ class ReferenceData(BaseData):
         
         self._player_scores_wk_1_id = 78
         
-        self.url_players = 'https://stats.underdogfantasy.com/v1/slates/87a5caba-d5d7-46d9-a798-018d7c116213/players'
-        self.url_appearances = 'https://stats.underdogfantasy.com/v1/slates/87a5caba-d5d7-46d9-a798-018d7c116213/scoring_types/ccf300b0-9197-5951-bd96-cba84ad71e86/appearances'
+        self.url_players = 'https://stats.underdogfantasy.com/v1/slates/' + self.slate_id + '/players'
+        self.url_appearances = 'https://stats.underdogfantasy.com/v1/slates/' + self.slate_id + '/scoring_types/ccf300b0-9197-5951-bd96-cba84ad71e86/appearances'
         self.url_teams = 'https://stats.underdogfantasy.com/v1/teams'
         
         base_url_player_scores = 'https://stats.underdogfantasy.com/v1/weeks/'
@@ -202,10 +234,15 @@ class ReferenceData(BaseData):
                 pass
             
         player_scores_df = pd.concat(player_scores_df_list)
+        player_scores_df.reset_index(inplace=True)
         
         return player_scores_df
         
     def _create_df_player_scores_one_wk(self, scraped_data: list) -> pd.DataFrame:
+        ''' 
+        Each weeks player scores are contained in its own URL - this creates a df
+        of those scores for one week
+        '''
         initial_scraped_df = self.create_scraped_data_df(scraped_data)
         initial_scraped_df.drop(['latest_news_item_updated_at'], axis=1, inplace=True)
         
@@ -283,6 +320,10 @@ class LeagueData(BaseData):
             dfs.append(df)
             
         final_df = pd.concat(dfs)
+        final_df.reset_index(inplace=True)
+        
+        week_mapping = self._create_week_id_mapping()
+        final_df = pd.merge(final_df, week_mapping, on='week_id')
         
         return final_df
         
@@ -347,14 +388,14 @@ class UserData(BaseData):
         super().__init__(clear_json_attrs=clear_json_attrs)
         self.auth_header = {'authorization': bearer_token}
         
-        self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/live_drafts'
-        self.url_tourney_league_ids = 'https://api.underdogfantasy.com/v1/user/slates/87a5caba-d5d7-46d9-a798-018d7c116213/tournament_rounds'
+        self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/live_drafts'
+        self.url_tourney_league_ids = 'https://api.underdogfantasy.com/v1/user/slates/' + self.slate_id + '/tournament_rounds'
         
         self.json_leagues = {}
         
         self.df_all_leagues = pd.DataFrame()
         
-    def create_df_all_leagues(self, league_urls: list=None):
+    def create_df_all_leagues(self, league_urls: list=None) -> pd.DataFrame:
         if league_urls is None:
             league_urls = self._create_league_urls()
         
@@ -383,7 +424,10 @@ class UserData(BaseData):
         return leagues_df
     
     def _create_json_leagues(self, url_base: str) -> dict:
-        ''' Loops through all the different pages that contain the league level data '''
+        ''' 
+        Loops through all the different pages that contain the league level data 
+        and stores each as an entry in a dict
+        '''
         
         url_exists = True
         i = 1
@@ -406,6 +450,11 @@ class UserData(BaseData):
         return leagues_json_dict
     
     def _create_df_tourney_league_ids(self) -> pd.DataFrame:
+        ''' 
+        Tournament leagues (i.e. Puppy 1, Puppy 2, etc.) require the ID of the
+        tourney in order to find all entries in it - This creates of all tourney 
+        IDs that has at least one entry
+        '''
         json_tourney_league_ids = self.read_in_site_data(self.url_tourney_league_ids, headers=self.auth_header)
         scraped_data = json_tourney_league_ids['tournament_rounds']
         
@@ -423,6 +472,9 @@ class UserData(BaseData):
         return final_df
     
     def _create_league_urls(self, tourney_league_ids: list=None) -> list:
+        ''' 
+        Creates a list of all the URLs that contain entries
+        '''
         if tourney_league_ids is None:
             tourney_league_ids = list(self._create_df_tourney_league_ids()['id'])
             
@@ -435,19 +487,6 @@ class UserData(BaseData):
         tourney_league_urls.append(self.url_base_leagues)
             
         return tourney_league_urls
-
-
-class AllUnderdogData():
-    
-    def __init__(self, bearer_token: str, league_ids:list=None, clear_json_attrs: bool=True):
-        self.ref_data = ReferenceData(clear_json_attrs=clear_json_attrs)
-        self.user_data = UserData(bearer_token, clear_json_attrs=clear_json_attrs)
-        self.league_data = LeagueData(league_ids, bearer_token, clear_json_attrs=clear_json_attrs)
-        
-    def _build_df_refs(self):
-        self.ref_data.build_all_dfs()
-        self.user_data.build_all_dfs()
-        self.league_data.build_all_dfs()
         
 
 def create_underdog_df_dict(bearer_token: str, sleep_time: int=0) -> dict:
@@ -501,4 +540,4 @@ if __name__ == '__main__':
     bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
     
     ### Pull all major UD data elements ###
-    underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5)
+    underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5) 

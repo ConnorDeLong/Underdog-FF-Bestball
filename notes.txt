@@ -63,6 +63,15 @@ Other:
 ######################################### General Notes ##############################################
 ######################################################################################################
 
+- Use https://api.underdogfantasy.com/v1/user/sports/nfl/settled_slates for a list of all
+slates that have been completed
+- Use https://api.underdogfantasy.com/v2/user/sports/nfl/live_slates?best_ball=true for a list of all
+active slates
+    - Note that there will be one "main" slate which is used for the general and tournament drafts.
+    The qualifying rounds will have their own slate IDs which will include a full draft board
+    for each entry in the slate which will allow you to pull the each teams list of players
+    - If the qualifying rounds need incorporated, some logic will be needed to distinguish these
+    from the main in order to apply the slate ID to the correct URL 
 - Seems like the "Auth" for the header will be different for every user since the user URL
 is pretty plain and requires a header in order to pull from it
     - CONFIRMED - There are three different parts to the auth deliminted by periods. Differences
