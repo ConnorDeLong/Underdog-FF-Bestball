@@ -4,3 +4,4 @@ validation.py
 __pycache__/
 scratch/
 sample_data/
+scraped_data/

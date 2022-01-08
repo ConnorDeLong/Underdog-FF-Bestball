@@ -388,7 +388,8 @@ class UserData(BaseData):
         super().__init__(clear_json_attrs=clear_json_attrs)
         self.auth_header = {'authorization': bearer_token}
         
-        self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/live_drafts'
+        # self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/live_drafts'
+        self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/settled_drafts'
         self.url_tourney_league_ids = 'https://api.underdogfantasy.com/v1/user/slates/' + self.slate_id + '/tournament_rounds'
         
         self.json_leagues = {}
@@ -511,7 +512,8 @@ def create_underdog_df_dict(bearer_token: str, sleep_time: int=0) -> dict:
     df_weekly_scores = league_data.df_weekly_scores
     
     final_dict = {'df_players_master': df_players_master, 'df_player_scores': df_player_scores,
-                  'df_drafts': df_drafts, 'df_weekly_scores': df_weekly_scores}
+                  'df_drafts': df_drafts, 'df_weekly_scores': df_weekly_scores, 
+                  'df_league_info': user_data.df_all_leagues}
     
     return final_dict
 
@@ -540,4 +542,34 @@ if __name__ == '__main__':
     bearer_token = pull_bearer_token(url, chromedriver_path, username, password)
     
     ### Pull all major UD data elements ###
-    underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5) 
+    underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5)
+    
+    # df_drafts = underdog_data['df_drafts']
+    # df_weekly_scores = underdog_data['df_weekly_scores']
+    
+    # print(df_drafts)
+    
+    # print(len(df_drafts[['draft_id']].drop_duplicates(subset=['draft_id'], keep='first')))
+    
+    # draft = df_weekly_scores.loc[df_weekly_scores['draft_id'] == 'd03c5d24-e2b7-40a1-9d17-855a9f925fba']
+    # print(draft)
+    
+    # user_data = UserData(bearer_token)
+    
+    # urls = user_data._create_league_urls()
+    # print(urls)
+    
+    # tourney_league_ids = user_data._create_df_tourney_league_ids()
+    # print(tourney_league_ids)
+    
+    # json_data = user_data._create_json_leagues(urls[0])
+    # json_data_tourneys = user_data._create_json_leagues(urls[1])
+    # print(json_data_tourneys)
+    
+    # user_data.build_all_dfs()
+    # league_ids = list(user_data.df_all_leagues['id'])
+    
+    # print(len(league_ids))
+    # print(user_data.df_all_leagues)
+    
+    # keep_vars = ['draft_id', 'entry_style_id', ]
