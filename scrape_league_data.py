@@ -547,20 +547,3 @@ if __name__ == '__main__':
     
     ### Pull all major UD data elements ###
     underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5)
-    
-    print(underdog_data.keys())
-    
-    print(underdog_data['df_drafts'])
-    
-    print(len(underdog_data['df_drafts'].groupby(['draft_id']).size()))
-    
-
-    # user_data = UserData(bearer_token)
-    # user_data.build_all_dfs()
-    # league_ids = list(user_data.df_all_leagues['id'])
-    
-    # print(user_data.df_all_leagues)
-    
-    
-    # print(user_data._create_df_tourney_league_ids())
-    # print(user_data._create_league_urls())
