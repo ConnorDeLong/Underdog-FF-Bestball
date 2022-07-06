@@ -11,7 +11,8 @@ class BaseData():
         self._clear_json_attrs = clear_json_attrs
         
         if slate_id is None:
-            self.slate_id = '87a5caba-d5d7-46d9-a798-018d7c116213'
+            # self.slate_id = '87a5caba-d5d7-46d9-a798-018d7c116213'
+            self.slate_id = 'f659a9be-fd34-4a1e-9c43-0816267e603d'
         else:
             self.slate_id = slate_id
             
@@ -27,7 +28,10 @@ class BaseData():
         attrs = [attr for attr in dir(self) if attr.startswith('df_')]
         for attr in attrs:
             method_name = 'create_'+ attr
-            self.__dict__[attr] = getattr(self, method_name)()
+            try:
+                self.__dict__[attr] = getattr(self, method_name)()
+            except:
+                print(getattr(self, method_name), 'failed to run')
             
             if sleep_time > 0:
                 time.sleep(sleep_time)
@@ -388,8 +392,8 @@ class UserData(BaseData):
         super().__init__(clear_json_attrs=clear_json_attrs)
         self.auth_header = {'authorization': bearer_token}
         
-        # self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/live_drafts'
-        self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/settled_drafts'
+        self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/completed_drafts'
+        # self.url_base_leagues = 'https://api.underdogfantasy.com/v2/user/slates/' + self.slate_id + '/settled_drafts'
         self.url_tourney_league_ids = 'https://api.underdogfantasy.com/v1/user/slates/' + self.slate_id + '/tournament_rounds'
         
         self.json_leagues = {}
@@ -544,32 +548,19 @@ if __name__ == '__main__':
     ### Pull all major UD data elements ###
     underdog_data = create_underdog_df_dict(bearer_token, sleep_time=5)
     
-    # df_drafts = underdog_data['df_drafts']
-    # df_weekly_scores = underdog_data['df_weekly_scores']
+    print(underdog_data.keys())
     
-    # print(df_drafts)
+    print(underdog_data['df_drafts'])
     
-    # print(len(df_drafts[['draft_id']].drop_duplicates(subset=['draft_id'], keep='first')))
+    print(len(underdog_data['df_drafts'].groupby(['draft_id']).size()))
     
-    # draft = df_weekly_scores.loc[df_weekly_scores['draft_id'] == 'd03c5d24-e2b7-40a1-9d17-855a9f925fba']
-    # print(draft)
-    
+
     # user_data = UserData(bearer_token)
-    
-    # urls = user_data._create_league_urls()
-    # print(urls)
-    
-    # tourney_league_ids = user_data._create_df_tourney_league_ids()
-    # print(tourney_league_ids)
-    
-    # json_data = user_data._create_json_leagues(urls[0])
-    # json_data_tourneys = user_data._create_json_leagues(urls[1])
-    # print(json_data_tourneys)
-    
     # user_data.build_all_dfs()
     # league_ids = list(user_data.df_all_leagues['id'])
     
-    # print(len(league_ids))
     # print(user_data.df_all_leagues)
     
-    # keep_vars = ['draft_id', 'entry_style_id', ]
+    
+    # print(user_data._create_df_tourney_league_ids())
+    # print(user_data._create_league_urls())
